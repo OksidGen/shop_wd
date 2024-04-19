@@ -1,0 +1,6 @@
+[submodule "shop_tg_bot"]
+	path = shop_tg_bot
+	url = https://github.com/OksidGen/shop_tg_bot
+[submodule "shop_tg_admin"]
+	path = shop_tg_admin
+	url = https://github.com/OksidGen/shop_tg_admin

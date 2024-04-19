@@ -1,0 +1,79 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: shop_wd
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+#    ports:
+#      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13.1-management-alpine
+    container_name: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+#      - "5672:5672"
+      - "15672:15672"  # если вам нужен доступ к веб-интерфейсу RabbitMQ
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+
+
+  bot:
+    build: /shop_tg_bot
+    container_name: bot
+    command: python main.py
+    restart: always
+    env_file:
+      - /shop_tg_bot/.env
+#      ports:
+#        - "443:443"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+
+  admin:
+      build: /shop_tg_admin
+      container_name: admin
+      command: >
+        sh -c "python ./admin_shop_wd/manage.py migrate &&
+               python ./admin_shop_wd/manage.py createsuperuser --noinput &&
+               python ./admin_shop_wd/manage.py runserver 0.0.0.0:8000"
+      restart: always
+      env_file:
+        - /shop_tg_admin/.env
+      ports:
+        - "8000:8000"
+      depends_on:
+        postgres:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+
+networks:
+  default:
+
+volumes:
+  postgres_data:
