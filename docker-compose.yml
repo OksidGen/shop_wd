@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:latest
     container_name: postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
@@ -22,13 +22,13 @@ services:
   rabbitmq:
     image: rabbitmq:3.13.1-management-alpine
     container_name: rabbitmq
-    restart: always
+    restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
     ports:
 #      - "5672:5672"
-      - "15672:15672"  # если вам нужен доступ к веб-интерфейсу RabbitMQ
+      - "15672:15672"
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
       interval: 30s
@@ -42,7 +42,7 @@ services:
     build: /shop_tg_bot
     container_name: bot
     command: python main.py
-    restart: always
+    restart: unless-stopped
     env_file:
       - /shop_tg_bot/.env
 #      ports:
@@ -61,7 +61,7 @@ services:
         sh -c "python ./admin_shop_wd/manage.py migrate &&
                python ./admin_shop_wd/manage.py createsuperuser --noinput &&
                python ./admin_shop_wd/manage.py runserver 0.0.0.0:8000"
-      restart: always
+      restart: unless-stopped
       env_file:
         - /shop_tg_admin/.env
       ports:
